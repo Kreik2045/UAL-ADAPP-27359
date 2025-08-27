@@ -144,7 +144,7 @@ cliente_id,nombre,apellido,email,fecha_registro
 143,Jeremy,Campos,jeremy.campos143@example.com,03/02/2020 08:57
 144,Mary,Glover,mary.glover144@example.com,11/08/2024 05:34
 145,Sarah,Skinner,sarah.skinner145@example.com,22/12/2023 07:59
-146,Allison,Hill,user31@example.com,03/10/2023 23:14
+146,Allison,Hill,allison@example.com,03/10/2023 23:14
 147,Jamie,Miller,user32@example.com,04/06/2024 01:45
 148,Kimberly,Johnson,user33@example.com,11/04/2024 10:57
 149,Elizabeth,Smith,user34@example.com,11/02/2024 05:50
