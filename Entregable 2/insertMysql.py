@@ -1,19 +1,47 @@
 import mysql.connector
 import csv
 from datetime import datetime
+import os
 
-config = {
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+config_clientes = {
     'user': 'root',
-    'password': 'hola',
+    'password': '',
+    'host': 'localhost',
+    'port': 3306,
+    'database': 'crm'
+}
+
+config_usuarios = {
+    'user': 'root',
+    'password': '',
     'host': 'localhost',
     'port': 3306,
     'database': 'dbo'
 }
 
+def insertar_clientes(cursor, archivo_csv):
+    with open(archivo_csv, newline='', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)  
+        for row in reader:
+            cliente_id, nombre, apellido, email, fecha_str = row
+            fecha_mysql = datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
+
+            cursor.execute("SELECT COUNT(*) FROM clientes WHERE email = %s", (email,))
+            if cursor.fetchone()[0] == 0:
+                cursor.execute("""
+                    INSERT INTO clientes (cliente_id, nombre, apellido, email, FechaRegistro)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (cliente_id, nombre, apellido, email, fecha_mysql))
+            else:
+                print(f"Cliente con email {email} ya existe, se omite.")
+
 def insertar_usuarios(cursor, archivo_csv):
     with open(archivo_csv, newline='', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile)
-        next(reader) 
+        next(reader)
         for row in reader:
             userId, username, first_name, last_name, email, password_hash, rol, fecha_str = row
             fecha_mysql = datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
@@ -28,28 +56,39 @@ def insertar_usuarios(cursor, archivo_csv):
                 print(f"Usuario {username} o email {email} ya existe, se omite.")
 
 def main():
-    conn = None
-    cursor = None
+    conn_c = cursor_c = None
     try:
-        conn = mysql.connector.connect(**config)
-        cursor = conn.cursor()
-        insertar_usuarios(cursor, "./Entregable 2/usuarios.csv")
-        conn.commit()
-        print("Registros insertados correctamente.")
-
+        conn_c = mysql.connector.connect(**config_clientes)
+        cursor_c = conn_c.cursor()
+        insertar_clientes(cursor_c, "clientes.csv")
+        conn_c.commit()
+        print("Clientes insertados correctamente.")
     except mysql.connector.Error as err:
-        print(f"Error de MySQL: {err}")
-        if conn:
-            conn.rollback()
-    except FileNotFoundError as err:
-        print(f"Archivo no encontrado: {err}")
-    except Exception as err:
-        print(f"Otro error: {err}")
+        print(f"Error clientes: {err}")
+        if conn_c:
+            conn_c.rollback()
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if cursor_c:
+            cursor_c.close()
+        if conn_c:
+            conn_c.close()
+
+    conn_u = cursor_u = None
+    try:
+        conn_u = mysql.connector.connect(**config_usuarios)
+        cursor_u = conn_u.cursor()
+        insertar_usuarios(cursor_u, "usuarios.csv")
+        conn_u.commit()
+        print("Usuarios insertados correctamente.")
+    except mysql.connector.Error as err:
+        print(f"Error usuarios: {err}")
+        if conn_u:
+            conn_u.rollback()
+    finally:
+        if cursor_u:
+            cursor_u.close()
+        if conn_u:
+            conn_u.close()
 
 if __name__ == "__main__":
     main()
