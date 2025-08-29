@@ -73,3 +73,25 @@ score_cutoff (int, opcional): puntaje mínimo de similitud para aceptar un match
     ...
 ]
 
+Después de obtener los resultados, se aplica un filtro para mostrar únicamente aquellos cuyo score sea mayor a 70.
+
+Ejemplo de uso en el código:
+    matches_filtrados = [r for r in resultados if r.get('score', 0) > 70]
+    En esta linea de codigo lo que hacemos es hacer una nueva lista con los datos de score donde tengan un score mayor a 70
+    Con el for recorremos nuestro resultado para solo insertar en la nueva variable los datos con mayor a 70 en socre
+    print(matches_filtrados)
+    y finalmente lo imprimimos
+
+
+OPTIMIZACIONES REALIZADAS EN insertMysql.py:
+
+1. Uso de 'with' para manejar la conexión y el cursor automáticamente:
+   Se implementó el contexto 'with' al abrir (funcion main)
+   la conexión a la base de datos y el cursor, 
+   lo que garantiza el cierre correcto de recursos y mejora la seguridad del código.
+
+2. Apertura única del archivo CSV:
+   El archivo CSV se abre una sola vez en el bloque principal (funcion main) y 
+   se pasa el reader a la función de inserción (funcion insertar clientes y usuarios), evitando múltiples aperturas y mejorando la eficiencia.
+
+Ambas optimizaciones ayudan a que el código sea más robusto, eficiente y fácil de mantener
