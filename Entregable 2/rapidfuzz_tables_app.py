@@ -19,21 +19,33 @@ def mostrar_resultados(resultados):
         print(resultados)
         return resultados
 
-def exportar_a_csv(resultados, nombre_archivo="resultados.csv"):
+def exportar_a_csv(resultados, nombre_archivo="resultados.csv", columnas=None, renombres=None):
     if not resultados:
         print("No se puede exportar: la lista de resultados está vacía.")
         return
     ruta_completa = os.path.join(CARPETA_DESTINO, nombre_archivo)
     df = pd.DataFrame(resultados)
+    if columnas:
+        if 'score' not in columnas:
+            columnas = ['score'] + [col for col in columnas if col != 'score']
+        df = df[columnas]
+        if renombres:
+            df = df.rename(columns=renombres)
     df.to_csv(ruta_completa, index=False)
     print(f"Resultados exportados a {ruta_completa}")
 
-def exportar_a_xlsx(resultados, nombre_archivo="resultados.xlsx"):
+def exportar_a_xlsx(resultados, nombre_archivo="resultados.xlsx", columnas=None, renombres=None):
     if not resultados:
         print("No se puede exportar: la lista de resultados está vacía.")
         return
     ruta_completa = os.path.join(CARPETA_DESTINO, nombre_archivo)
     df = pd.DataFrame(resultados)
+    if columnas:
+        if 'score' not in columnas:
+            columnas = ['score'] + [col for col in columnas if col != 'score']
+        df = df[columnas]
+        if renombres:
+            df = df.rename(columns=renombres)
     df.to_excel(ruta_completa, index=False)
     print(f"Resultados exportados a {ruta_completa}")
 
@@ -56,6 +68,16 @@ params_dict = {
 resultados = execute_dynamic_matching(params_dict, score_cutoff=70)
 matches_filtrados = [r for r in resultados if r.get('score', 0)]
 
+for r in matches_filtrados:
+    if 'score' in r:
+        r['score'] = f"{round(float(r['score']), 2)}%"
+    nombre = r.get('nombre', '')
+    apellido = r.get('apellido', '')
+    if nombre or apellido:
+        r['nombre_completo'] = f"{nombre} {apellido}".strip()
+    else:
+        r['nombre_completo'] = ''
+
 mostrar_resultados(matches_filtrados)
 
 limite = input("Cuantas filas quieres exportar? (Especifica con un numero)").strip()
@@ -71,9 +93,40 @@ elif limite == "" or limite == "0":
     print("Opcion no disponible, por favor asegurese de ingresar un numero mayor o igual a uno.")
     matches_filtrados = []
     exit()  
-elif limite == "" or limite == "0":
-    print("Opcion no disponible, por favor asegurese de ingresar un numero mayor o igual a uno")
-    matches_filtrados = []
+
+if matches_filtrados:
+    columnas_disponibles = [col for col in matches_filtrados[0].keys() if col != 'score']
+    print("Columnas disponibles para exportar (además de 'score' que siempre se incluye):")
+    print(", ".join(columnas_disponibles))
+    print("Puedes renombrar columnas usando el formato columna:nuevo_nombre (Ejemplo: nombre:Nombre,apellido:Apellido)")
+    columnas_seleccionadas = input("Escribe las columnas que quieres exportar, separadas por coma (además de 'score'): ").strip()
+    if not columnas_seleccionadas:
+        print("Debes seleccionar al menos una columna además de 'score'. El programa se cerrará.")
+        exit()
+    columnas = []
+    renombres = {}
+    for item in columnas_seleccionadas.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if ":" in item:
+            original, nuevo = item.split(":", 1)
+            original = original.strip()
+            nuevo = nuevo.strip()
+            if original in columnas_disponibles and nuevo:
+                columnas.append(original)
+                renombres[original] = nuevo
+        else:
+            if item in columnas_disponibles:
+                columnas.append(item)
+    if not columnas:
+        print("No se seleccionó ninguna columna válida. No se puede exportar solo la columna 'score'. El programa se cerrará.")
+        exit()
+    columnas = ['score'] + [col for col in columnas if col != 'score']
+else:
+    columnas = []
+    renombres = {}
+
 exportar = input("Deseas exportar los resultados a un archivo CSV? (Si/No): ")
 if exportar.lower() == 'si':
     nombre_archivo = input("Ingresa el nombre del archivo CSV: ")
@@ -81,7 +134,8 @@ if exportar.lower() == 'si':
         nombre_archivo = "resultados.csv"
     elif not nombre_archivo.lower().endswith('.csv'):
         nombre_archivo += ".csv"
-    exportar_a_csv(matches_filtrados, nombre_archivo)
+    exportar_a_csv(matches_filtrados, nombre_archivo, columnas, renombres)
+
 exportar_xlsx = input("¿Deseas exportar los resultados a un archivo XLSX? (Si/No): ")
 if exportar_xlsx.lower() == 'si':
     if not matches_filtrados:
@@ -92,4 +146,4 @@ if exportar_xlsx.lower() == 'si':
             nombre_archivo_xlsx = "resultados.xlsx"
         elif not nombre_archivo_xlsx.lower().endswith('.xlsx'):
             nombre_archivo_xlsx += ".xlsx"
-        exportar_a_xlsx(matches_filtrados, nombre_archivo_xlsx)
+        exportar_a_xlsx(matches_filtrados, nombre_archivo_xlsx, columnas, renombres)

@@ -1,0 +1,6 @@
+score,nombre,apellido,email,match_query,match_result,match_result_values,destTable,sourceTable
+70.4225352112676,Michael,Jones,michael.jones2@example.com,MichaelJonesmichael.jones2@example.com,MichaelRobinsonuser47@example.com,"{'first_name': 'Michael', 'last_name': 'Robinson', 'email': 'user47@example.com'}",Usuarios,Clientes
+72.72727272727273,Herbert,Davis,herbert.davis5@example.com,HerbertDavisherbert.davis5@example.com,RobertDavisuser2@example.com,"{'first_name': 'Robert', 'last_name': 'Davis', 'email': 'user2@example.com'}",Usuarios,Clientes
+71.60493827160495,Christopher,Moore,christopher.moore44@example.com,ChristopherMoorechristopher.moore44@example.com,ChristopherBowenuser42@example.com,"{'first_name': 'Christopher', 'last_name': 'Bowen', 'email': 'user42@example.com'}",Usuarios,Clientes
+100.0,April,Gonzalez,user8@example.com,AprilGonzalezuser8@example.com,AprilGonzalezuser8@example.com,"{'first_name': 'April', 'last_name': 'Gonzalez', 'email': 'user8@example.com'}",Usuarios,Clientes
+100.0,Colton,Collins,user9@example.com,ColtonCollinsuser9@example.com,ColtonCollinsuser9@example.com,"{'first_name': 'Colton', 'last_name': 'Collins', 'email': 'user9@example.com'}",Usuarios,Clientes
