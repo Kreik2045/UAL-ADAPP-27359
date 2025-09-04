@@ -1,5 +1,0 @@
-score,nombre_prueba,correo,Resultados_De_Match
-70.4225352112676,Michael,michael.jones2@example.com,"{'first_name': 'Michael', 'last_name': 'Robinson', 'email': 'user47@example.com'}"
-72.72727272727273,Herbert,herbert.davis5@example.com,"{'first_name': 'Robert', 'last_name': 'Davis', 'email': 'user2@example.com'}"
-71.60493827160495,Christopher,christopher.moore44@example.com,"{'first_name': 'Christopher', 'last_name': 'Bowen', 'email': 'user42@example.com'}"
-100.0,April,user8@example.com,"{'first_name': 'April', 'last_name': 'Gonzalez', 'email': 'user8@example.com'}"

@@ -1,6 +1,7 @@
 import os
-from rapidfuzz_table_app_2 import execute_dynamic_matching
 import pandas as pd
+from rapidfuzz_table_app_2 import execute_dynamic_matching
+import mysql.connector
 
 CARPETA_DESTINO = "C:/Users/Lenovo/Desktop/mi_proyecto_git/Entregable 2/Archivos"  
 os.makedirs(CARPETA_DESTINO, exist_ok=True)
@@ -49,6 +50,70 @@ def exportar_a_xlsx(resultados, nombre_archivo="resultados.xlsx", columnas=None,
     df.to_excel(ruta_completa, index=False)
     print(f"Resultados exportados a {ruta_completa}")
 
+def separar_coincididos(resultados, umbral=97):
+    coincididos = []
+    no_coincididos = []
+    for r in resultados:
+        score_str = str(r.get('score', '0')).replace('%', '')
+        try:
+            score_val = float(score_str)
+        except ValueError:
+            score_val = 0
+        if score_val >= umbral:
+            coincididos.append(r)
+        else:
+            no_coincididos.append(r)
+    return coincididos, no_coincididos
+
+def crear_tabla_desde_csv(connection, table_name, csv_file):
+    """
+    Borra la tabla si existe y la vuelve a crear con columnas basadas en el archivo CSV.
+    Todas las columnas se crean como VARCHAR(255) por simplicidad.
+    """
+    cursor = connection.cursor()
+    try:
+        df = pd.read_csv(csv_file)
+        columnas = df.columns.tolist()
+
+        # Eliminar la tabla si ya existe
+        drop_query = f"DROP TABLE IF EXISTS `{table_name}`;"
+        cursor.execute(drop_query)
+
+        # Crear tabla nueva
+        columnas_sql = ", ".join([f"`{col}` VARCHAR(255)" for col in columnas])
+        create_query = f"CREATE TABLE `{table_name}` ({columnas_sql});"
+        cursor.execute(create_query)
+        connection.commit()
+
+        print(f"Tabla '{table_name}' recreada correctamente.")
+        return columnas
+    except Exception as e:
+        print(f"Error al crear la tabla: {e}")
+        return []
+    finally:
+        cursor.close()
+
+def insert_from_csv(connection, table, columns, csv_file):
+    """
+    Inserta datos desde un archivo CSV en la tabla indicada.
+    """
+    cursor = connection.cursor()
+    placeholders = ', '.join(['%s'] * len(columns))
+    insert_query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
+    rows = []
+    try:
+        df = pd.read_csv(csv_file)
+        for _, row in df.iterrows():
+            values = [str(row[col]) if pd.notna(row[col]) else None for col in columns]
+            rows.append(tuple(values))
+        cursor.executemany(insert_query, rows)
+        connection.commit()
+        print(f"Se insertaron {cursor.rowcount} filas en la tabla '{table}'.")
+    except Exception as error:
+        print(f"Error al insertar datos: {error}")
+    finally:
+        cursor.close()
+
 params_dict = {
     "server": "localhost",
     "port": 3306,
@@ -78,6 +143,10 @@ for r in matches_filtrados:
     else:
         r['nombre_completo'] = ''
 
+coincididos, no_coincididos = separar_coincididos(matches_filtrados, umbral=97)
+print(f"Resultados mayor a 97% coincididos: {len(coincididos)}")
+print(f"Resultados menores a 97% no coincididos: {len(no_coincididos)}")
+
 mostrar_resultados(matches_filtrados)
 
 limite = input("Cuantas filas quieres exportar? (Especifica con un numero)").strip()
@@ -94,8 +163,16 @@ elif limite == "" or limite == "0":
     matches_filtrados = []
     exit()  
 
-if matches_filtrados:
-    columnas_disponibles = [col for col in matches_filtrados[0].keys() if col != 'score']
+grupo_exportar = input("¿Qué resultados deseas exportar? Escribe coincididos para los que tienen score >= 97%, no_coincididos para el resto, o presiona Enter para todos: ").strip().lower()
+if grupo_exportar == "coincididos":
+    resultados_a_exportar = coincididos
+elif grupo_exportar == "no_coincididos":
+    resultados_a_exportar = no_coincididos
+else:
+    resultados_a_exportar = matches_filtrados
+
+if resultados_a_exportar:
+    columnas_disponibles = [col for col in resultados_a_exportar[0].keys() if col != 'score']
     print("Columnas disponibles para exportar (además de 'score' que siempre se incluye):")
     print(", ".join(columnas_disponibles))
     print("Puedes renombrar columnas usando el formato columna:nuevo_nombre (Ejemplo: nombre:Nombre,apellido:Apellido)")
@@ -134,11 +211,11 @@ if exportar.lower() == 'si':
         nombre_archivo = "resultados.csv"
     elif not nombre_archivo.lower().endswith('.csv'):
         nombre_archivo += ".csv"
-    exportar_a_csv(matches_filtrados, nombre_archivo, columnas, renombres)
+    exportar_a_csv(resultados_a_exportar, nombre_archivo, columnas, renombres)
 
 exportar_xlsx = input("¿Deseas exportar los resultados a un archivo XLSX? (Si/No): ")
 if exportar_xlsx.lower() == 'si':
-    if not matches_filtrados:
+    if not resultados_a_exportar:
         print("No hay resultados para exportar a XLSX.")
     else:
         nombre_archivo_xlsx = input("Ingresa el nombre del archivo XLSX: ")
@@ -146,4 +223,27 @@ if exportar_xlsx.lower() == 'si':
             nombre_archivo_xlsx = "resultados.xlsx"
         elif not nombre_archivo_xlsx.lower().endswith('.xlsx'):
             nombre_archivo_xlsx += ".xlsx"
-        exportar_a_xlsx(matches_filtrados, nombre_archivo_xlsx, columnas, renombres)
+        exportar_a_xlsx(resultados_a_exportar, nombre_archivo_xlsx, columnas, renombres)
+
+importar = input("¿Deseas importar datos desde un archivo CSV e insertarlos en una tabla MySQL? (Si/No): ").strip().lower()
+if importar == 'si':
+    ruta_csv = input("Ingresa la ruta del archivo CSV a importar: ").strip()
+    nombre_tabla = input("Ingresa el nombre de la tabla destino en MySQL (se recreará cada vez): ").strip()
+
+    try:
+        conexion = mysql.connector.connect(
+            host=params_dict["server"],
+            user=params_dict["username"],
+            password=params_dict["password"],
+            database=params_dict["sourceDatabase"],
+            port=params_dict["port"]
+        )
+
+        columnas_tabla = crear_tabla_desde_csv(conexion, nombre_tabla, ruta_csv)
+
+        if columnas_tabla:
+            insert_from_csv(conexion, nombre_tabla, columnas_tabla, ruta_csv)
+
+        conexion.close()
+    except Exception as e:
+        print(f"Error al conectar o insertar en MySQL: {e}")
