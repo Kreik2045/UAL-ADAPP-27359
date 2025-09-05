@@ -95,3 +95,59 @@ OPTIMIZACIONES REALIZADAS EN insertMysql.py:
    se pasa el reader a la función de inserción (funcion insertar clientes y usuarios), evitando múltiples aperturas y mejorando la eficiencia.
 
 Ambas optimizaciones ayudan a que el código sea más robusto, eficiente y fácil de mantener
+
+Para optimizar el rendimiento de la aplicación al insertar datos en tablas MySQL, se realizaron los siguientes cambios:
+
+Creación de un Stored Procedure dinámico
+
+Nombre: sp_insert_csv_table_001 (siguiendo la convención sp_[process][source][target]_[numero de control]).
+
+Función: Inserta registros en cualquier tabla indicando nombre de tabla, columnas y valores.
+
+Ventajas:
+
+Mejora el rendimiento frente a inserciones masivas desde Python.
+
+Evita errores de sintaxis con nombres de columnas que sean reservadas o contengan espacios, usando backticks.
+
+Permite valores dinámicos provenientes de cualquier CSV.
+
+Modificación de la función Python insert_from_csv
+
+Antes: Se construía el INSERT en Python y se ejecutaba con cursor.executemany.
+
+Ahora:
+
+Se leen los valores del CSV y se formatean en SQL ('valor1','valor2',...).
+
+Se llaman al stored procedure usando cursor.callproc.
+
+Se escapan automáticamente las comillas simples en los valores para evitar errores de sintaxis.
+
+Beneficio: El código Python ya no arma consultas SQL manuales, lo que reduce errores y mejora el rendimiento.
+
+Uso de parámetros dinámicos en el Stored Procedure
+
+p_table_name: nombre de la tabla destino.
+
+p_columns: columnas de la tabla separadas por coma.
+
+p_values: valores a insertar, separados por comillas simples y coma.
+
+Flujo de uso en la aplicación
+
+Se selecciona un archivo CSV.
+
+Se crea/recrea la tabla destino según las columnas del CSV.
+
+Se llama al SP sp_insert_csv_table_001 para insertar cada fila del CSV.
+
+Se confirma la inserción con connection.commit().
+
+Beneficios generales
+
+Mayor eficiencia en la inserción de datos masivos.
+
+Código más limpio y mantenible.
+
+Reducción de errores de sintaxis y conflictos con nombres de columnas.
