@@ -95,20 +95,32 @@ def crear_tabla_desde_csv(connection, table_name, csv_file):
 
 def insert_from_csv(connection, table, columns, csv_file):
     """
-    Inserta datos desde un archivo CSV en la tabla indicada.
+    Inserta datos desde un archivo CSV en la tabla indicada usando un Stored Procedure.
     """
     cursor = connection.cursor()
-    placeholders = ', '.join(['%s'] * len(columns))
-    insert_query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
-    rows = []
     try:
         df = pd.read_csv(csv_file)
         for _, row in df.iterrows():
-            values = [str(row[col]) if pd.notna(row[col]) else None for col in columns]
-            rows.append(tuple(values))
-        cursor.executemany(insert_query, rows)
+            # Convertir valores a formato SQL ('valor1','valor2',...)
+            values = []
+            for col in columns:
+                val = row[col]
+                if pd.isna(val):
+                    values.append("NULL")
+                else:
+                    # Escapamos comillas simples dentro de los valores
+                    val_str = str(val).replace("'", "''")
+                    values.append(f"'{val_str}'")
+            values_str = ",".join(values)
+
+            # Llamar al SP
+            cursor.callproc(
+                "sp_insert_csv_table_001",
+                (table, ",".join(columns), values_str)
+            )
+
         connection.commit()
-        print(f"Se insertaron {cursor.rowcount} filas en la tabla '{table}'.")
+        print(f"Se insertaron {len(df)} filas en la tabla '{table}' usando SP.")
     except Exception as error:
         print(f"Error al insertar datos: {error}")
     finally:

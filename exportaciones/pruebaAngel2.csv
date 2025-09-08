@@ -1,0 +1,4 @@
+nombre,apellido,email,match_result,score
+Janet,Norris,janet.norris1@example.com,,0.0
+Michael,Jones,michael.jones2@example.com,MichaelRobinsonuser47@example.com,70.42
+Donna,Nelson,donna.nelson3@example.com,,0.0
