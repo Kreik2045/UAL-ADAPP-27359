@@ -113,7 +113,7 @@ def insert_from_csv(connection, table, columns, csv_file):
 
             # Llamar al SP
             cursor.callproc(
-                "sp_insert_csv_table_001",
+                "sp_insert_csv_table_26994",
                 (table, ",".join(columns), values_str)
             )
 

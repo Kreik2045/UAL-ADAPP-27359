@@ -1,6 +1,6 @@
 DELIMITER $$
 
-CREATE PROCEDURE sp_insert_csv_table_001 (
+CREATE PROCEDURE sp_insert_csv_table_26994 (
     IN p_table_name VARCHAR(100),
     IN p_columns TEXT,
     IN p_values TEXT
