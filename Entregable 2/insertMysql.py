@@ -28,15 +28,7 @@ def insertar_clientes(cursor, archivo_csv):
         for row in reader:
             cliente_id, nombre, apellido, email, fecha_str = row
             fecha_mysql = datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
-
-            cursor.execute("SELECT COUNT(*) FROM clientes WHERE email = %s", (email,))
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("""
-                    INSERT INTO clientes (cliente_id, nombre, apellido, email, FechaRegistro)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (cliente_id, nombre, apellido, email, fecha_mysql))
-            else:
-                print(f"Cliente con email {email} ya existe, se omite.")
+            cursor.callproc("sp_insert_cliente", (cliente_id, nombre, apellido, email, fecha_mysql))
 
 def insertar_usuarios(cursor, archivo_csv):
     with open(archivo_csv, newline='', encoding='utf-8') as csvfile:
@@ -45,15 +37,7 @@ def insertar_usuarios(cursor, archivo_csv):
         for row in reader:
             userId, username, first_name, last_name, email, password_hash, rol, fecha_str = row
             fecha_mysql = datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
-
-            cursor.execute("SELECT COUNT(*) FROM usuarios WHERE email = %s OR username = %s", (email, username))
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("""
-                    INSERT INTO usuarios (userId, username, first_name, last_name, email, password_hash, rol, fecha_creacion)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                """, (userId, username, first_name, last_name, email, password_hash, rol, fecha_mysql))
-            else:
-                print(f"Usuario {username} o email {email} ya existe, se omite.")
+            cursor.callproc("sp_insert_usuario", (userId, username, first_name, last_name, email, password_hash, rol, fecha_mysql))
 
 def main():
     conn_c = cursor_c = None
